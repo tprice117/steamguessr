@@ -20,6 +20,16 @@ app.get("/api/reviews/:appId", async (req, res) => {
   }
 });
 
+
+// Temporary Endpoint to check if the guessed appId matches the actual appId
+app.get("/api/check-appid/:appId", (req, res) => {
+  const { appId } = req.params;
+  const guess = req.query.guess;
+  // Compare as strings
+  const correct = String(appId) === String(guess);
+  res.json({ correct });
+});
+
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });

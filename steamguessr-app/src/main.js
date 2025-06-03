@@ -9,8 +9,12 @@ import logoJpg from "./logo.jpg";
 // <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
 //   <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
 // </a>
+    // <div class="card">
+    //   <button id="counter" type="button"></button>
+    // </div>
+    // setupCounter(document.querySelector("#counter"));
 document.querySelector("#app").innerHTML = `
-  <nav class="navbar" style="position:sticky;top:0;z-index:1000;background:#222;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:space-between;">
+  <nav class="navbar" style="position:sticky;top:0;z-index:1000;background:#333;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:space-between;">
     <span style="color:#fff;font-weight:bold;font-size:1.2rem;">SteamGuessr!</span>
     <div style="display:flex;align-items:center;gap:1rem;">
       <a class="nav-link" href="https://github.com/tprice117/" target="_blank" title="GitHub" style="display:flex;align-items:center;">
@@ -27,26 +31,7 @@ document.querySelector("#app").innerHTML = `
           />
         </svg>
       </a>
-      <a
-        class="nav-link"
-        href="https://www.linkedin.com/in/tyler-price-023884235/"
-        target="_blank"
-        title="LinkedIn"
-        style="display:flex;align-items:center;"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          fill="currentColor"
-          class="linkedin-button"
-          viewBox="0 0 16 16"
-        >
-          <path
-            d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"
-          />
-        </svg>
-      </a>
+
     </div>
   </nav>
   <div>
@@ -54,15 +39,42 @@ document.querySelector("#app").innerHTML = `
       <img src="${logoJpg}" class="logo vanilla" alt="JavaScript logo" />
     </a>
     <h1>SteamGuessr!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
+
     <div id="reviews"></div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
+    <button id="backToTop" style="position:fixed;bottom:30px;right:30px;display:none;padding:0.7em 1.2em;font-size:1rem;border:none;border-radius:5px;background:#333;color:#fff;cursor:pointer;z-index:1001;">
+      ↑ Back to Top
+    </button>
+
   </div>
 `;
+
+// Insert guessing game form immediately after setting innerHTML
+const guessDiv = document.createElement("div");
+guessDiv.style.margin = "2em 0";
+guessDiv.innerHTML = `
+  <form id="guessForm" style="display:flex;gap:0.5em;align-items:center;">
+    <input type="number" id="guessInput" placeholder="Guess the AppID..." min="1" required style="padding:0.5em;font-size:1em;border-radius:4px;border:1px solid #ccc;">
+    <button type="submit" style="padding:0.5em 1em;font-size:1em;border:none;border-radius:4px;background:#333;color:#fff;cursor:pointer;">Guess</button>
+    <span id="guessResult" style="margin-left:1em;font-weight:bold;"></span>
+  </form>
+`;
+// Find the parent div that contains #reviews
+const reviewsDiv = document.getElementById("reviews");
+const parentDiv = reviewsDiv.parentNode;
+parentDiv.insertBefore(guessDiv, reviewsDiv);
+
+// Attach event listeners for Back to Top button after DOM is updated
+const backToTopBtn = document.getElementById("backToTop");
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 200) {
+    backToTopBtn.style.display = "block";
+  } else {
+    backToTopBtn.style.display = "none";
+  }
+});
+backToTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 // Fetch and display Steam game reviews
 const appId = 570; // Replace with your target game's appId
@@ -81,7 +93,9 @@ function fetchSteamReviews() {
               (review) => `
           <div class="review">
             <p><strong>Summary:</strong> ${review.review}</p>
-            <p><strong>Voted Helpful:</strong> ${review.votes_helpful}</p>
+            <p><strong>Hours on Record:</strong> ${review.author.playtime_forever}</p>
+
+            <p><strong>Voted Helpful:</strong> ${review.weighted_vote_score}</p>
             <p><strong>Voted Up:</strong> ${review.voted_up}</p>
             <hr>
           </div>
@@ -100,4 +114,24 @@ function fetchSteamReviews() {
 
 fetchSteamReviews();
 
-setupCounter(document.querySelector("#counter"));
+
+document.getElementById("guessForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const guess = document.getElementById("guessInput").value;
+  fetch(`http://localhost:3001/api/check-appid/${appId}?guess=${guess}`)
+    .then((res) => res.json())
+    .then((data) => {
+      const resultSpan = document.getElementById("guessResult");
+      if (data.correct) {
+        resultSpan.textContent = "Correct!";
+        resultSpan.style.color = "green";
+      } else {
+        resultSpan.textContent = "Incorrect, try again!";
+        resultSpan.style.color = "red";
+      }
+    })
+    .catch(() => {
+      document.getElementById("guessResult").textContent = "Error checking guess.";
+    });
+});
+
