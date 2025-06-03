@@ -1,0 +1,4 @@
+important commands: 
+
+Run dev webserver: npm run dev
+Run backend Proxy server: node server.js
