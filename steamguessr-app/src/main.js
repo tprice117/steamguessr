@@ -17,7 +17,7 @@ document.querySelector("#app").innerHTML = `
   <nav class="navbar" style="position:sticky;top:0;z-index:1000;background:#333;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:space-between;">
     <span style="color:#fff;font-weight:bold;font-size:1.2rem;">SteamGuessr!</span>
     <div style="display:flex;align-items:center;gap:1rem;">
-      <a class="nav-link" href="https://github.com/tprice117/" target="_blank" title="GitHub" style="display:flex;align-items:center;">
+      <a class="nav-link" href="https://github.com/tprice117/steamguessr" target="_blank" title="GitHub" style="display:flex;align-items:center;">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="18"
