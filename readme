@@ -4,5 +4,5 @@ To run this project, you need to have Node.js and npm installed on your machine.
 
 
 important commands: 
-  Run dev webserver: npm run dev
-  Run backend Proxy server: node server.js
+  - Run dev webserver: npm run dev
+  - Run backend Proxy server: node server.js
