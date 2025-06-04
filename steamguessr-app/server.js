@@ -10,7 +10,8 @@ app.use(cors());
 
 app.get("/api/reviews/:appId", async (req, res) => {
   const { appId } = req.params;
-  const url = `https://store.steampowered.com/appreviews/${appId}?json=1&filter=top&language=english&num_per_page=5`;
+  // Use filter=all for helpfulness, with day_range=30, and num_per_page=5
+  const url = `https://store.steampowered.com/appreviews/${appId}?json=1&filter=all&language=english&day_range=30&num_per_page=5`;
   try {
     const response = await fetch(url);
     const data = await response.json();
@@ -20,7 +21,6 @@ app.get("/api/reviews/:appId", async (req, res) => {
   }
 });
 
-
 // Temporary Endpoint to check if the guessed appId matches the actual appId
 app.get("/api/check-appid/:appId", (req, res) => {
   const { appId } = req.params;
@@ -28,6 +28,30 @@ app.get("/api/check-appid/:appId", (req, res) => {
   // Compare as strings
   const correct = String(appId) === String(guess);
   res.json({ correct });
+});
+
+// Endpoint to get game details (including title) by appId
+app.get("/api/appdetails/:appId", async (req, res) => {
+  const { appId } = req.params;
+  const url = `https://store.steampowered.com/api/appdetails?appids=${appId}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    const appData = data[appId];
+    if (appData && appData.success && appData.data) {
+      res.json({
+        name: appData.data.name,
+        header_image: appData.data.header_image,
+        type: appData.data.type,
+        steam_appid: appData.data.steam_appid,
+        ...appData.data,
+      });
+    } else {
+      res.status(404).json({ error: "App not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch app details" });
+  }
 });
 
 app.listen(PORT, () => {
