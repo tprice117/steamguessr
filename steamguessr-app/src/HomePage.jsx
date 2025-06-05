@@ -30,7 +30,7 @@ function HomePage() {
     setHeaderImage("");
     setReviews([]);
     // Fetch game details
-    fetch(`http://localhost:3001/api/appdetails/${appId}`)
+    fetch(`/api/appdetails/${appId}`)
       .then((res) => res.json())
       .then((data) => {
         if (!isCurrent) return;
@@ -41,7 +41,7 @@ function HomePage() {
         if (isCurrent) setError("Error fetching game details.");
       });
     // Fetch reviews
-    fetch(`http://localhost:3001/api/reviews/${appId}`)
+    fetch(`/api/reviews/${appId}`)
       .then((res) => res.json())
       .then((data) => {
         if (!isCurrent) return;
@@ -61,7 +61,7 @@ function HomePage() {
 
   // --- Fetch top 500 appIDs on mount ---
   useEffect(() => {
-    fetch("http://localhost:3001/api/top500appids")
+    fetch("/api/top500appids")
       .then((res) => res.json())
       .then((data) => {
         setTopAppIds(data.appids || []);
