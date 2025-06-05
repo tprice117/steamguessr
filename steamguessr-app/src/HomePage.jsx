@@ -131,6 +131,62 @@ function HomePage() {
     );
   }
 
+  // --- Render a single review card ---
+  function renderReviewCard(review, label) {
+    if (!review) return null;
+    const iconPath = review.voted_up
+      ? "/icon_thumbsUp_v6.png"
+      : "/icon_thumbsDown_v6.png";
+    const iconAlt = review.voted_up ? "Thumbs Up" : "Thumbs Down";
+    return (
+      <div
+        className="steam-review-card"
+        style={{
+          background: "#181a21",
+          borderRadius: 8,
+          padding: "1.2em 1.5em",
+          margin: "1.2em auto",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+          color: "#c7d5e0",
+          maxWidth: 700,
+          textAlign: "left",
+        }}
+      >
+        <div style={{ fontWeight: "bold", color: "#ffe066", marginBottom: 6, fontSize: "1.1em" }}>{label}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1em", marginBottom: "0.7em" }}>
+          <img src={iconPath} alt={iconAlt} style={{ width: 28, height: 28, verticalAlign: "middle" }} />
+          <span style={{ fontSize: "1.1em", fontWeight: "bold", color: review.voted_up ? "#66c0f4" : "#d94141" }}>
+            {review.voted_up ? "Recommended" : "Not Recommended"}
+          </span>
+          <span style={{ fontSize: "0.95em", color: "#a4b1cd" }}>{Math.round((review.author.playtime_forever || 0) / 60)} hrs on record</span>
+        </div>
+        <div
+          style={{ fontSize: "1.08em", lineHeight: 1.5, marginBottom: "0.8em" }}
+          dangerouslySetInnerHTML={{ __html: blurTitleInText(review.review) }}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5em", fontSize: "0.97em" }}>
+          <span title="SteamID">🧑 {review.author.steamid}</span>
+          <span title="Helpful votes">👍 {review.votes_up}</span>
+          <span title="Funny votes">😂 {review.votes_funny}</span>
+          <span title="Review posted">🕒 {new Date(review.timestamp_created * 1000).toLocaleDateString()}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Render labeled reviews ---
+  function renderLabeledReviews() {
+    // The backend returns [mostFunny, mostUpvotedPositive, mostUpvotedNegative]
+    const [mostFunny, mostUpvotedPositive, mostUpvotedNegative] = reviews;
+    return (
+      <div>
+        {renderReviewCard(mostFunny, "Most Funny Review")}
+        {renderReviewCard(mostUpvotedPositive, "Most Upvoted Positive Review")}
+        {renderReviewCard(mostUpvotedNegative, "Most Upvoted Negative Review")}
+      </div>
+    );
+  }
+
   // --- Render reviews ---
   function renderReviews() {
     if (loading) return <p>Loading reviews...</p>;
@@ -374,7 +430,7 @@ function HomePage() {
       {renderHeaderImage()}
       {renderGameTitle()}
       {/* Reviews */}
-      <div id="reviews">{renderReviews()}</div>
+      <div id="reviews">{renderLabeledReviews()}</div>
       {/* Back to Top button */}
       {showBackToTop && (
         <button

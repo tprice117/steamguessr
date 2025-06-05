@@ -10,12 +10,33 @@ app.use(cors());
 
 app.get("/api/reviews/:appId", async (req, res) => {
   const { appId } = req.params;
-  // Use filter=all for helpfulness, with day_range=30, and num_per_page=5
-  const url = `https://store.steampowered.com/appreviews/${appId}?json=1&filter=all&language=english&day_range=30&num_per_page=5`;
-  try {
+  // Helper to select reviews
+  async function getBestReviews(url) {
     const response = await fetch(url);
     const data = await response.json();
-    res.json(data);
+    if (!data.reviews) return [];
+    const reviews = data.reviews;
+    // Most funny review
+    const sortedFunny = [...reviews].sort((a, b) => (b.votes_funny || 0) - (a.votes_funny || 0));
+    const mostFunny = sortedFunny[0];
+    // Most upvoted positive review (not the most funny)
+    const sortedPositive = [...reviews].filter(r => r.voted_up && r.recommendationid !== (mostFunny && mostFunny.recommendationid)).sort((a, b) => (b.votes_up || 0) - (a.votes_up || 0));
+    const mostUpvotedPositive = sortedPositive[0];
+    // Most upvoted negative review (not the most funny or most upvoted positive)
+    const sortedNegative = [...reviews].filter(r => !r.voted_up && r.recommendationid !== (mostFunny && mostFunny.recommendationid) && r.recommendationid !== (mostUpvotedPositive && mostUpvotedPositive.recommendationid)).sort((a, b) => (b.votes_up || 0) - (a.votes_up || 0));
+    const mostUpvotedNegative = sortedNegative[0];
+    return [mostFunny, mostUpvotedPositive, mostUpvotedNegative].filter(Boolean);
+  }
+  // Try past year first
+  let url = `https://store.steampowered.com/appreviews/${appId}?json=1&filter=all&language=english&day_range=365&num_per_page=100`;
+  try {
+    let result = await getBestReviews(url);
+    // If no reviews, try lifetime
+    if (result.length === 0) {
+      url = `https://store.steampowered.com/appreviews/${appId}?json=1&filter=all&language=english&day_range=0&num_per_page=100`;
+      result = await getBestReviews(url);
+    }
+    res.json({ reviews: result });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch reviews" });
   }

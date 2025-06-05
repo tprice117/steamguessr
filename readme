@@ -3,6 +3,7 @@ To run this project, you need to have Node.js and npm installed on your machine.
 
 API's used:
 - https://store.steampowered.com/api/
+- https://partner.steamgames.com/doc/store/getreviews
 - https://steamspy.com/api.php?request=all
 
 important commands:
