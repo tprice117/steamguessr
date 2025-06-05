@@ -2,11 +2,18 @@
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(cors());
+// Serve static files from the Vite build
+app.use(express.static(path.join(__dirname, "dist")));
 
 app.get("/api/reviews/:appId", async (req, res) => {
   const { appId } = req.params;
@@ -91,6 +98,11 @@ app.get("/api/top500appids", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch top 500 appIDs" });
   }
+});
+
+// Fallback: serve index.html for any unknown route (for React Router)
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 app.listen(PORT, () => {
