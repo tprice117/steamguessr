@@ -82,15 +82,19 @@ function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // --- Utility: Remove special copyright/trademark/superscript chars from a string ---
+  // --- Utility: Remove special copyright/trademark/superscript chars and edition suffixes from a string ---
   function normalizeTitle(str) {
     if (!str) return "";
     // Remove TM, ®, ©, ℗, superscripts, and similar marks
-    return str
+    let s = str
       .replace(/[™®©℗°·•†‡§¶…‰‱⁂⁑⁂⁃⁇⁈⁉⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁱⁿ⁰-⁹:]/gi, "")
       .replace(/\s+/g, " ") // collapse whitespace
       .trim()
       .toLowerCase();
+    // Remove common edition suffixes
+    s = s.replace(/(\s*[:-]?\s*)?(goty|game of the year|special|definitive|ultimate|complete|deluxe|collector'?s?|anniversary|remastered|remaster|edition|hd|vr|redux|platinum|expansion|bundle|pack|collection|season pass|year \d{4}|\d{4})+\s*edition?/gi, "");
+    s = s.replace(/\s+/g, " ").trim();
+    return s;
   }
 
   // --- Guess form submit ---
