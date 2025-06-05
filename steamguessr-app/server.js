@@ -54,6 +54,24 @@ app.get("/api/appdetails/:appId", async (req, res) => {
   }
 });
 
+// Endpoint to get top 500 appIDs from SteamSpy
+app.get("/api/top500appids", async (req, res) => {
+  try {
+    const response = await fetch("https://steamspy.com/api.php?request=all");
+    const data = await response.json();
+    // Sort by owners (take the lower bound of the owners range)
+    const sorted = Object.values(data).sort((a, b) => {
+      const aOwners = parseInt(a.owners.split(" .. ")[0].replace(/,/g, ""), 10);
+      const bOwners = parseInt(b.owners.split(" .. ")[0].replace(/,/g, ""), 10);
+      return bOwners - aOwners;
+    });
+    const top500 = sorted.slice(0, 500).map((game) => game.appid);
+    res.json({ appids: top500 });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch top 500 appIDs" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });

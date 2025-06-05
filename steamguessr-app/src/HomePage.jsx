@@ -4,7 +4,7 @@ import "./style.css";
 
 function HomePage() {
   // --- State ---
-  const [appId, setAppId] = useState(2622380); // Default AppID
+  const [appId, setAppId] = useState(); // Default AppID
   const [gameTitle, setGameTitle] = useState("");
   const [headerImage, setHeaderImage] = useState("");
   const [reviews, setReviews] = useState([]);
@@ -14,10 +14,12 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [topAppIds, setTopAppIds] = useState([]);
   const reviewsTopRef = useRef(null);
 
   // --- Fetch game details and reviews when appId changes ---
   useEffect(() => {
+    if (appId === undefined) return; // Only fetch if appId is set
     setLoading(true);
     setError("");
     setIsBlurred(true);
@@ -46,6 +48,22 @@ function HomePage() {
         setLoading(false);
       });
   }, [appId]);
+
+  // --- Fetch top 500 appIDs on mount ---
+  useEffect(() => {
+    fetch("http://localhost:3001/api/top500appids")
+      .then((res) => res.json())
+      .then((data) => {
+        setTopAppIds(data.appids || []);
+        // Only set appId if it is undefined (first load)
+        if ((data.appids && data.appids.length > 0) && appId === undefined) {
+          setAppId(
+            data.appids[Math.floor(Math.random() * data.appids.length)]
+          );
+        }
+      })
+      .catch(() => setTopAppIds([]));
+  }, []);
 
   // --- Back to Top button logic ---
   useEffect(() => {
