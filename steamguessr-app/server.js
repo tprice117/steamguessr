@@ -101,7 +101,7 @@ app.get("/api/top500appids", async (req, res) => {
 });
 
 // Fallback: serve index.html for any unknown route (for React Router)
-app.get("/*", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
