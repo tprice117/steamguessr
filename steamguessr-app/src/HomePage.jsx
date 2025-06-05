@@ -20,6 +20,7 @@ function HomePage() {
   // --- Fetch game details and reviews when appId changes ---
   useEffect(() => {
     if (appId === undefined) return; // Only fetch if appId is set
+    let isCurrent = true; // fetch token
     setLoading(true);
     setError("");
     setIsBlurred(true);
@@ -32,21 +33,30 @@ function HomePage() {
     fetch(`http://localhost:3001/api/appdetails/${appId}`)
       .then((res) => res.json())
       .then((data) => {
+        if (!isCurrent) return;
         setGameTitle(data.name || "");
         setHeaderImage(data.header_image || "");
       })
-      .catch(() => setError("Error fetching game details."));
+      .catch(() => {
+        if (isCurrent) setError("Error fetching game details.");
+      });
     // Fetch reviews
     fetch(`http://localhost:3001/api/reviews/${appId}`)
       .then((res) => res.json())
       .then((data) => {
+        if (!isCurrent) return;
         setReviews(data.reviews || []);
         setLoading(false);
       })
       .catch(() => {
-        setError("Error fetching reviews.");
-        setLoading(false);
+        if (isCurrent) {
+          setError("Error fetching reviews.");
+          setLoading(false);
+        }
       });
+    return () => {
+      isCurrent = false;
+    };
   }, [appId]);
 
   // --- Fetch top 500 appIDs on mount ---
@@ -56,10 +66,8 @@ function HomePage() {
       .then((data) => {
         setTopAppIds(data.appids || []);
         // Only set appId if it is undefined (first load)
-        if ((data.appids && data.appids.length > 0) && appId === undefined) {
-          setAppId(
-            data.appids[Math.floor(Math.random() * data.appids.length)]
-          );
+        if (data.appids && data.appids.length > 0 && appId === undefined) {
+          setAppId(data.appids[Math.floor(Math.random() * data.appids.length)]);
         }
       })
       .catch(() => setTopAppIds([]));
@@ -74,12 +82,23 @@ function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // --- Utility: Remove special copyright/trademark/superscript chars from a string ---
+  function normalizeTitle(str) {
+    if (!str) return "";
+    // Remove TM, ®, ©, ℗, superscripts, and similar marks
+    return str
+      .replace(/[™®©℗°·•†‡§¶…‰‱⁂⁑⁂⁃⁇⁈⁉⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁱⁿ⁰-⁹:]/gi, "")
+      .replace(/\s+/g, " ") // collapse whitespace
+      .trim()
+      .toLowerCase();
+  }
+
   // --- Guess form submit ---
   function handleGuessSubmit(e) {
     e.preventDefault();
     if (!gameTitle) return;
-    const guess = guessInput.trim().toLowerCase();
-    const actual = gameTitle.trim().toLowerCase();
+    const guess = normalizeTitle(guessInput);
+    const actual = normalizeTitle(gameTitle);
     if (guess === actual) {
       setGuessResult("Correct!");
       setIsBlurred(false);

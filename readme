@@ -1,8 +1,11 @@
 This is a testing project that uses Node.js, Express, and React to create a simple web application. The project includes a backend server that serves static files and a frontend React application.
 To run this project, you need to have Node.js and npm installed on your machine.
 
+API's used:
+- https://store.steampowered.com/api/
+- https://steamspy.com/api.php?request=all
 
+important commands:
 
-important commands: 
-  - Run dev webserver: npm run dev
-  - Run backend Proxy server: node server.js
+- Run dev webserver: npm run dev
+- Run backend Proxy server: node server.js
