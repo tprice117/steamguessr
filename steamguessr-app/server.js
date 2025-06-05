@@ -100,11 +100,11 @@ app.get("/api/top500appids", async (req, res) => {
   }
 });
 
+app.listen(PORT, () => {
+  console.log(`Proxy server running on http://localhost:${PORT}`);
+});
+
 // Fallback: serve index.html for any unknown route (for React Router)
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
-
-app.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`);
 });
