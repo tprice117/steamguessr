@@ -24,15 +24,33 @@ app.get("/api/reviews/:appId", async (req, res) => {
     if (!data.reviews) return [];
     const reviews = data.reviews;
     // Most funny review
-    const sortedFunny = [...reviews].sort((a, b) => (b.votes_funny || 0) - (a.votes_funny || 0));
+    const sortedFunny = [...reviews].sort(
+      (a, b) => (b.votes_funny || 0) - (a.votes_funny || 0)
+    );
     const mostFunny = sortedFunny[0];
     // Most upvoted positive review (not the most funny)
-    const sortedPositive = [...reviews].filter(r => r.voted_up && r.recommendationid !== (mostFunny && mostFunny.recommendationid)).sort((a, b) => (b.votes_up || 0) - (a.votes_up || 0));
+    const sortedPositive = [...reviews]
+      .filter(
+        (r) =>
+          r.voted_up &&
+          r.recommendationid !== (mostFunny && mostFunny.recommendationid)
+      )
+      .sort((a, b) => (b.votes_up || 0) - (a.votes_up || 0));
     const mostUpvotedPositive = sortedPositive[0];
     // Most upvoted negative review (not the most funny or most upvoted positive)
-    const sortedNegative = [...reviews].filter(r => !r.voted_up && r.recommendationid !== (mostFunny && mostFunny.recommendationid) && r.recommendationid !== (mostUpvotedPositive && mostUpvotedPositive.recommendationid)).sort((a, b) => (b.votes_up || 0) - (a.votes_up || 0));
+    const sortedNegative = [...reviews]
+      .filter(
+        (r) =>
+          !r.voted_up &&
+          r.recommendationid !== (mostFunny && mostFunny.recommendationid) &&
+          r.recommendationid !==
+            (mostUpvotedPositive && mostUpvotedPositive.recommendationid)
+      )
+      .sort((a, b) => (b.votes_up || 0) - (a.votes_up || 0));
     const mostUpvotedNegative = sortedNegative[0];
-    return [mostFunny, mostUpvotedPositive, mostUpvotedNegative].filter(Boolean);
+    return [mostFunny, mostUpvotedPositive, mostUpvotedNegative].filter(
+      Boolean
+    );
   }
   // Try past year first
   let url = `https://store.steampowered.com/appreviews/${appId}?json=1&filter=all&language=english&day_range=365&num_per_page=100`;
@@ -100,11 +118,11 @@ app.get("/api/top500appids", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`);
-});
-
 // Fallback: serve index.html for any unknown route (for React Router)
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Proxy server running on http://localhost:${PORT}`);
 });
