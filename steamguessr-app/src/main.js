@@ -35,8 +35,8 @@ document.querySelector("#app").innerHTML = `
     </div>
   </nav>
   <div>
-    <a href="./logo.jpg" target="_blank">
-      <img src="${logoJpg}" class="logo vanilla" alt="JavaScript logo" />
+    <a href="./" target="_blank">
+      <img src="${logoJpg}" class="logo vanilla" alt="Steamguessr logo" />
     </a>
     <h1>SteamGuessr!</h1>
 
@@ -77,7 +77,7 @@ backToTopBtn.addEventListener("click", () => {
 });
 
 // Fetch and display Steam game reviews
-const appId = 1245620; // Replace with your target game's appId
+const appId = 1364780; // Replace with your target game's appId
 const url = `http://localhost:3001/api/reviews/${appId}`;
 
 // Fetch and display game title
@@ -132,24 +132,52 @@ function fetchSteamReviews() {
       const reviewsDiv = document.getElementById("reviews");
       if (data.reviews) {
         reviewsDiv.innerHTML =
-          "<h2>Top Reviews:</h2>" +
+          `<h2>Top Reviews:</h2>` +
           data.reviews
-            .map(
-              (review) => `
-          <div class="review">
-            <p><strong>Summary:</strong> ${review.review}</p>
-            <p><strong>Hours on Record:</strong> ${review.author.playtime_forever}</p>
-
-            <p><strong>Voted Helpful:</strong> ${review.weighted_vote_score}</p>
-            <p><strong>Voted Up:</strong> ${review.voted_up}</p>
-            <hr>
-          </div>
-        `
-            )
+            .map((review) => {
+              // Blur the game title in the review text
+              let reviewText = review.review;
+              const actualTitle = (data.name || "").trim();
+              if (actualTitle) {
+                const titleRegex = new RegExp(
+                  actualTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "gi"
+                );
+                reviewText = reviewText.replace(
+                  titleRegex,
+                  (match) =>
+                    `<span class='blurred-title' style='filter: blur(8px); background: #222; color: transparent; border-radius: 3px; padding: 0 0.2em;'>${match}</span>`
+                );
+              }
+              // Icon for recommended/not recommended
+              const iconPath = review.voted_up
+                ? '/public/icon_thumbsUp_v6.png'
+                : '/public/icon_thumbsDown_v6.png';
+              const iconAlt = review.voted_up ? 'Thumbs Up' : 'Thumbs Down';
+              // Steam-like review card
+              return `
+                <div class="steam-review-card" style="background:#181a21;border-radius:8px;padding:1.2em 1.5em;margin:1.2em 0;box-shadow:0 2px 12px rgba(0,0,0,0.18);color:#c7d5e0;max-width:700px;">
+                  <div style="display:flex;align-items:center;gap:1em;margin-bottom:0.7em;">
+                    <img src="${iconPath}" alt="${iconAlt}" style="width:28px;height:28px;vertical-align:middle;" />
+                    <span style="font-size:1.1em;font-weight:bold;color:${review.voted_up ? '#66c0f4' : '#d94141'};">
+                      ${review.voted_up ? 'Recommended' : 'Not Recommended'}
+                    </span>
+                    <span style="font-size:0.95em;color:#a4b1cd;">${Math.round((review.author.playtime_forever || 0) / 60)} hrs on record</span>
+                  </div>
+                  <div style="font-size:1.08em;line-height:1.5;margin-bottom:0.8em;">${reviewText}</div>
+                  <div style="display:flex;align-items:center;gap:1.5em;font-size:0.97em;">
+                    <span title="SteamID">🧑 ${review.author.steamid}</span>
+                    <span title="Helpful votes">👍 ${review.votes_up}</span>
+                    <span title="Review posted">🕒 ${new Date(review.timestamp_created * 1000).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              `;
+            })
             .join("");
       } else {
         reviewsDiv.innerHTML = "<p>No reviews found.</p>";
       }
+      console.log(data.reviews);
     })
     .catch(() => {
       document.getElementById("reviews").innerHTML =
@@ -158,11 +186,14 @@ function fetchSteamReviews() {
 }
 
 fetchGameTitle();
-fetchSteamReviews();
 
+fetchSteamReviews();
 document.getElementById("guessForm").addEventListener("submit", function (e) {
   e.preventDefault();
-  const guess = document.getElementById("guessInput").value.trim().toLowerCase();
+  const guess = document
+    .getElementById("guessInput")
+    .value.trim()
+    .toLowerCase();
   // Fetch the actual game title for the current appId
   fetch(`http://localhost:3001/api/appdetails/${appId}`)
     .then((res) => res.json())
@@ -181,6 +212,7 @@ document.getElementById("guessForm").addEventListener("submit", function (e) {
       }
     })
     .catch(() => {
-      document.getElementById("guessResult").textContent = "Error checking guess.";
+      document.getElementById("guessResult").textContent =
+        "Error checking guess.";
     });
 });
