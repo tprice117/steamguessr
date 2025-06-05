@@ -117,18 +117,34 @@ function HomePage() {
     }
   }
 
-  // --- Blur game title in review text ---
+  // --- Blur game title in review text (fuzzy multi-word matching) ---
   function blurTitleInText(text) {
     if (!gameTitle) return text;
-    const regex = new RegExp(
-      gameTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-      "gi"
-    );
-    return text.replace(regex, (match) =>
-      isBlurred
-        ? `<span class='blurred-title' style='filter: blur(8px); background: #222; color: transparent; border-radius: 3px; padding: 0 0.2em;'>${match}</span>`
-        : `<span style='font-weight:bold;'>${match}</span>`
-    );
+    // Tokenize title (ignore special chars)
+    const words = gameTitle.match(/\w+/g);
+    if (!words || words.length < 2) return text;
+    // Generate all 2+ word consecutive combinations
+    const phrases = [];
+    for (let len = words.length; len >= 2; len--) {
+      for (let i = 0; i <= words.length - len; i++) {
+        phrases.push(words.slice(i, i + len).join(" "));
+      }
+    }
+    let result = text;
+    phrases.forEach((phrase) => {
+      // Regex: match phrase, ignore case, allow for minor punctuation between words
+      const pattern = phrase
+        .split(" ")
+        .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("[\\s:;,.!?-]*");
+      const regex = new RegExp(pattern, "gi");
+      result = result.replace(regex, (match) =>
+        isBlurred
+          ? `<span class='blurred-title' style='filter: blur(8px); background: #222; color: transparent; border-radius: 3px; padding: 0 0.2em;'>${match}</span>`
+          : `<span style='font-weight:bold;'>${match}</span>`
+      );
+    });
+    return result;
   }
 
   // --- Render a single review card ---
