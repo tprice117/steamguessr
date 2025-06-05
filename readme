@@ -6,7 +6,7 @@ API's used:
 - https://partner.steamgames.com/doc/store/getreviews
 - https://steamspy.com/api.php?request=all
 
-important commands:
+important commands for local dev deployment:
 
 - Run dev webserver: npm run dev
 - Run backend Proxy server: node server.js
