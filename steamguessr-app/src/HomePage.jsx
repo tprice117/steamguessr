@@ -2,11 +2,16 @@ import React, { useEffect, useState, useRef } from "react";
 import logoJpg from "./logo.jpg";
 import "./style.css";
 
+// Global variable to show/hide dev tools (AppID input form)
+const SHOW_DEV_TOOLS = false;
+
 function HomePage() {
   // --- State ---
   const [appId, setAppId] = useState(); // Default AppID
   const [gameTitle, setGameTitle] = useState("");
   const [headerImage, setHeaderImage] = useState("");
+  const [gameDescription, setGameDescription] = useState("");
+  const [showDescription, setShowDescription] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [guessInput, setGuessInput] = useState("");
   const [guessResult, setGuessResult] = useState("");
@@ -15,6 +20,7 @@ function HomePage() {
   const [error, setError] = useState("");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [topAppIds, setTopAppIds] = useState([]);
+  const [wrongGuesses, setWrongGuesses] = useState(0);
   const reviewsTopRef = useRef(null);
 
   // --- Fetch game details and reviews when appId changes ---
@@ -28,7 +34,10 @@ function HomePage() {
     setGuessResult("");
     setGameTitle("");
     setHeaderImage("");
+    setGameDescription("");
+    setShowDescription(false);
     setReviews([]);
+    setWrongGuesses(0);
     // Fetch game details
     fetch(`/api/appdetails/${appId}`)
       .then((res) => res.json())
@@ -36,6 +45,9 @@ function HomePage() {
         if (!isCurrent) return;
         setGameTitle(data.name || "");
         setHeaderImage(data.header_image || "");
+        setGameDescription(
+          data.short_description || data.detailed_description || ""
+        );
       })
       .catch(() => {
         if (isCurrent) setError("Error fetching game details.");
@@ -92,7 +104,10 @@ function HomePage() {
       .trim()
       .toLowerCase();
     // Remove common edition suffixes
-    s = s.replace(/(\s*[:-]?\s*)?(goty|game of the year|special|definitive|ultimate|complete|deluxe|collector'?s?|anniversary|remastered|remaster|edition|hd|vr|redux|platinum|expansion|bundle|pack|collection|season pass|year \d{4}|\d{4})+\s*edition?/gi, "");
+    s = s.replace(
+      /(\s*[:-]?\s*)?(goty|game of the year|special|definitive|ultimate|complete|deluxe|collector'?s?|anniversary|remastered|remaster|edition|hd|vr|redux|platinum|expansion|bundle|pack|collection|season pass|year \d{4}|\d{4})+\s*edition?/gi,
+      ""
+    );
     s = s.replace(/\s+/g, " ").trim();
     return s;
   }
@@ -104,9 +119,14 @@ function HomePage() {
     const guess = normalizeTitle(guessInput);
     const actual = normalizeTitle(gameTitle);
     if (guess === actual) {
-      setGuessResult("Correct!");
+      setGuessResult(
+        `Correct! You got it in ${wrongGuesses + 1} ${
+          wrongGuesses === 0 ? "try" : "tries"
+        }!`
+      );
       setIsBlurred(false);
     } else {
+      setWrongGuesses((prev) => prev + 1);
       setGuessResult(`Incorrect, try again!`);
       setIsBlurred(true);
     }
@@ -172,23 +192,61 @@ function HomePage() {
           textAlign: "left",
         }}
       >
-        <div style={{ fontWeight: "bold", color: "#ffe066", marginBottom: 6, fontSize: "1.1em" }}>{label}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1em", marginBottom: "0.7em" }}>
-          <img src={iconPath} alt={iconAlt} style={{ width: 28, height: 28, verticalAlign: "middle" }} />
-          <span style={{ fontSize: "1.1em", fontWeight: "bold", color: review.voted_up ? "#66c0f4" : "#d94141" }}>
+        <div
+          style={{
+            fontWeight: "bold",
+            color: "#ffe066",
+            marginBottom: 6,
+            fontSize: "1.1em",
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1em",
+            marginBottom: "0.7em",
+          }}
+        >
+          <img
+            src={iconPath}
+            alt={iconAlt}
+            style={{ width: 28, height: 28, verticalAlign: "middle" }}
+          />
+          <span
+            style={{
+              fontSize: "1.1em",
+              fontWeight: "bold",
+              color: review.voted_up ? "#66c0f4" : "#d94141",
+            }}
+          >
             {review.voted_up ? "Recommended" : "Not Recommended"}
           </span>
-          <span style={{ fontSize: "0.95em", color: "#a4b1cd" }}>{Math.round((review.author.playtime_forever || 0) / 60)} hrs on record</span>
+          <span style={{ fontSize: "0.95em", color: "#a4b1cd" }}>
+            {Math.round((review.author.playtime_forever || 0) / 60)} hrs on
+            record
+          </span>
         </div>
         <div
           style={{ fontSize: "1.08em", lineHeight: 1.5, marginBottom: "0.8em" }}
           dangerouslySetInnerHTML={{ __html: blurTitleInText(review.review) }}
         />
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5em", fontSize: "0.97em" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1.5em",
+            fontSize: "0.97em",
+          }}
+        >
           <span title="SteamID">🧑 {review.author.steamid}</span>
           <span title="Helpful votes">👍 {review.votes_up}</span>
           <span title="Funny votes">😂 {review.votes_funny}</span>
-          <span title="Review posted">🕒 {new Date(review.timestamp_created * 1000).toLocaleDateString()}</span>
+          <span title="Review posted">
+            🕒 {new Date(review.timestamp_created * 1000).toLocaleDateString()}
+          </span>
         </div>
       </div>
     );
@@ -339,6 +397,51 @@ function HomePage() {
     );
   }
 
+  // --- Render game description ---
+  function renderGameDescription() {
+    if (!gameDescription) return null;
+    return (
+      <div style={{ margin: "2em auto", maxWidth: 700, textAlign: "center" }}>
+        <button
+          onClick={() => setShowDescription(!showDescription)}
+          style={{
+            padding: "0.8em 1.5em",
+            fontSize: "1em",
+            border: "none",
+            borderRadius: 8,
+            background: "#4a5568",
+            color: "#fff",
+            cursor: "pointer",
+            marginBottom: showDescription ? "1em" : 0,
+            transition: "background-color 0.2s",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}
+          onMouseEnter={(e) => (e.target.style.background = "#2d3748")}
+          onMouseLeave={(e) => (e.target.style.background = "#4a5568")}
+        >
+          {showDescription ? "Hide" : "Show"} Game Description{" "}
+          {showDescription ? "▲" : "▼"}
+        </button>
+        {showDescription && (
+          <div
+            style={{
+              background: "#181a21",
+              borderRadius: 8,
+              padding: "1.5em",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+              color: "#c7d5e0",
+              textAlign: "left",
+              lineHeight: 1.6,
+            }}
+            dangerouslySetInnerHTML={{
+              __html: gameDescription,
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
   // --- Scroll to top ---
   function handleBackToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -353,46 +456,48 @@ function HomePage() {
         <img src={logoJpg} className="logo vanilla" alt="Steamguessr logo" />
       </a>
       <h1>SteamGuessr!</h1>
-      {/* AppID input */}
-      <form
-        onSubmit={handleAppIdChange}
-        style={{
-          margin: "1em 0",
-          display: "flex",
-          gap: "0.5em",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <input
-          type="number"
-          name="appIdInput"
-          min="1"
-          placeholder="Enter Steam AppID..."
-          defaultValue={appId}
+      {/* AppID input - Dev Tool */}
+      {SHOW_DEV_TOOLS && (
+        <form
+          onSubmit={handleAppIdChange}
           style={{
-            padding: "0.5em",
-            fontSize: "1em",
-            borderRadius: 4,
-            border: "1px solid #ccc",
-            width: 180,
-          }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: "0.5em 1em",
-            fontSize: "1em",
-            border: "none",
-            borderRadius: 4,
-            background: "#333",
-            color: "#fff",
-            cursor: "pointer",
+            margin: "1em 0",
+            display: "flex",
+            gap: "0.5em",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
-          Load Game
-        </button>
-      </form>
+          <input
+            type="number"
+            name="appIdInput"
+            min="1"
+            placeholder="Enter Steam AppID..."
+            defaultValue={appId}
+            style={{
+              padding: "0.5em",
+              fontSize: "1em",
+              borderRadius: 4,
+              border: "1px solid #ccc",
+              width: 180,
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: "0.5em 1em",
+              fontSize: "1em",
+              border: "none",
+              borderRadius: 4,
+              background: "#333",
+              color: "#fff",
+              cursor: "pointer",
+            }}
+          >
+            Load Game
+          </button>
+        </form>
+      )}
       {/* Guess form */}
       <form
         onSubmit={handleGuessSubmit}
@@ -435,20 +540,32 @@ function HomePage() {
           style={{
             marginLeft: "1em",
             fontWeight: "bold",
-            color:
-              guessResult === "Correct!"
-                ? "green"
-                : guessResult
-                ? "red"
-                : undefined,
+            color: guessResult.startsWith("Correct!")
+              ? "green"
+              : guessResult
+              ? "red"
+              : undefined,
           }}
         >
           {guessResult}
         </span>
+        {wrongGuesses > 0 && !guessResult.startsWith("Correct!") && (
+          <span
+            style={{
+              marginLeft: "0.5em",
+              fontSize: "0.9em",
+              color: "#666",
+            }}
+          >
+            ({wrongGuesses} wrong guess{wrongGuesses !== 1 ? "es" : ""})
+          </span>
+        )}
       </form>
       {/* Header image and game title */}
       {renderHeaderImage()}
       {renderGameTitle()}
+      {/* Game description */}
+      {renderGameDescription()}
       {/* Reviews */}
       <div id="reviews">{renderLabeledReviews()}</div>
       {/* Back to Top button */}
